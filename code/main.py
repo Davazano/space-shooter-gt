@@ -15,9 +15,8 @@ surf.fill((0, 127, 127))
 path = join("space_shooter", "images", "player.png")
 print(path)
 player_surf = pygame.image.load(path).convert_alpha()
-x = 50
-y = 100
-
+# player_rect = player_surf.get_rect(bottomright=(WINDOW_WIDTH - 10, WINDOW_HEIGHT - 10))
+player_rect = player_surf.get_frect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
 # star
 star_surf = pygame.image.load(join("space_shooter", "images", "star.png")).convert_alpha()
 star_position = [(randint(0, WINDOW_WIDTH), randint(0, WINDOW_HEIGHT)) for i in range(20)]
@@ -33,11 +32,14 @@ while running:
     # draw the game
     display_surface.fill("darkgray")
 
-    x += 0.1
-    display_surface.blit(player_surf, (x, y))
-
     for pos in star_position:
         display_surface.blit(star_surf, pos)
+
+    if player_rect.right < WINDOW_WIDTH:
+        player_rect.left += 0.2
+    
+    display_surface.blit(player_surf, player_rect)
+
     pygame.display.update()
 
 pygame.quit()

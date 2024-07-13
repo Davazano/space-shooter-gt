@@ -5,7 +5,7 @@ from random import randint, uniform
 class Player(pygame.sprite.Sprite):
     def __init__(self, group):
         super().__init__(group)
-        self.image = pygame.image.load(join("space_shooter", "images", "player.png")).convert_alpha()
+        self.image = pygame.image.load(join("space_shooter", "images", "player.png")).convert_alpha() 
         self.rect = self.image.get_frect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
         self.direction = pygame.math.Vector2()
         self.speed = 300
@@ -14,6 +14,12 @@ class Player(pygame.sprite.Sprite):
         self.can_shoot = True
         self.laser_shoot_time = 0
         self.cooldown_duration = 400
+
+        # mask
+        self.mask = pygame.mask.from_surface(self.image)
+        # mask_surf = mask.to_surface()
+        # mask_surf.set_colorkey((0,0,0))
+        # self.image = mask_surf
 
     def laser_timer(self):
         if not self.can_shoot:
@@ -67,16 +73,24 @@ class Laser(pygame.sprite.Sprite):
 class Meteor(pygame.sprite.Sprite):
     def __init__(self, surf, pos, group):
         super().__init__(group)
+        self.original_surf = surf
         self.image = surf
         self.rect = self.image.get_frect(center=pos)
         # self.spawned_time = pygame.time.get_ticks()
         # self.lifetime = 3000
         self.direction = pygame.Vector2(uniform(-0.5, 0.5), 1)
         self.speed = randint(100, 500)
+        self.rotation_speed = randint(40, 80)
+        self.rotation = 0
     
     def update(self, dt):
         # Move meteor
         self.rect.center += self.direction * self.speed * dt
+
+        # Rotate meteor
+        self.rotation += self.rotation_speed * dt
+        self.image = pygame.transform.rotozoom(self.original_surf, self.rotation, 1)
+        self.rect = self.image.get_frect(center = self.rect.center)
 
         # Destroy meteor after 2 seconds
         if self.rect.top > WINDOW_HEIGHT:
@@ -90,7 +104,8 @@ class Meteor(pygame.sprite.Sprite):
 def collisions():
     global running
     # check for collision between player and meteor
-    collision_sprites = pygame.sprite.spritecollide(player, meteor_sprites, True)
+    # masks can heavily tank your game performance. So use with caution
+    collision_sprites = pygame.sprite.spritecollide(player, meteor_sprites, True, pygame.sprite.collide_mask)
     if collision_sprites:
         running = False
         print(collision_sprites[0])

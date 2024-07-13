@@ -35,7 +35,7 @@ class Player(pygame.sprite.Sprite):
         # fire laser
         recent_keys = pygame.key.get_just_pressed()
         if recent_keys[pygame.K_SPACE] and self.can_shoot:
-            Laser(laser_surf, self.rect.midtop, all_sprites)
+            Laser(laser_surf, self.rect.midtop, (all_sprites, laser_sprites))
             self.can_shoot = False
             self.laser_shoot_time = pygame.time.get_ticks()
         
@@ -56,7 +56,9 @@ class Laser(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(midbottom = pos)
     
     def update(self, dt):
+        # Move laser up
         self.rect.centery -= 400 * dt
+
         # Destroy laser if it goes off screen
         if self.rect.bottom < 0:
             self.kill()
@@ -84,11 +86,28 @@ class Meteor(pygame.sprite.Sprite):
         # if current_time - self.spawned_time >= self.lifetime:
         #     self.kill()
 
+
+def collisions():
+    global running
+    # check for collision between player and meteor
+    collision_sprites = pygame.sprite.spritecollide(player, meteor_sprites, True)
+    if collision_sprites:
+        running = False
+        print(collision_sprites[0])
+
+    # check for collision between laser and meteor
+    for laser in laser_sprites:
+        collided_sprites = pygame.sprite.spritecollide(laser, meteor_sprites, True)
+        if collided_sprites:
+            laser.kill()
+            print(collided_sprites[0])
+
 # general setup
 pygame.init()
 WINDOW_WIDTH, WINDOW_HEIGHT = 1280, 720
 display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 pygame.display.set_caption("Space Shooter")
+running = True
 clock = pygame.time.Clock()
 
 # import
@@ -98,6 +117,8 @@ laser_surf = pygame.image.load(join("space_shooter", "images", "laser.png")).con
 
 # sprites
 all_sprites = pygame.sprite.Group()
+meteor_sprites = pygame.sprite.Group()
+laser_sprites = pygame.sprite.Group()
 # star sprites
 for pos in range(20):
     Star(all_sprites, star_surf)
@@ -107,8 +128,6 @@ player = Player(all_sprites)
 # Custom events -> meteor event
 meteor_event = pygame.event.custom_type()
 pygame.time.set_timer(meteor_event, 500)
-
-running = True
 
 while running:
     # if you don't pass parameters into clock.tick() then your computer will decide the frame rate
@@ -121,9 +140,10 @@ while running:
             running = False
         if event.type == meteor_event:
             x, y = randint(0, WINDOW_WIDTH), randint(-200, -100)
-            Meteor(meteor_surf, (x, y), all_sprites)
+            Meteor(meteor_surf, (x, y), (all_sprites, meteor_sprites))
 
     all_sprites.update(dt)
+    collisions()
 
     # draw the game
     display_surface.fill("darkgray")
